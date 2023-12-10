@@ -46,6 +46,18 @@ Future<ChukNorris> fetchChuckNorris() async {
   }
 }
 
+Future<Cat> fetchCat() async {
+  final response = await http.get(
+    Uri.parse('https://api.thecatapi.com/v1/images/search'),
+  );
+
+  if (response.statusCode == 200) {
+    return Cat.fromJson(jsonDecode(response.body[0]) as Map<String, dynamic>);
+  } else {
+    throw Exception('Failed to load cat.');
+  }
+}
+
 class ChukNorris {
   final String id;
   final String value;
@@ -98,6 +110,38 @@ class Album {
           title: title,
         ),
       _ => throw const FormatException('Failed to load album.'),
+    };
+  }
+}
+
+class Cat {
+  final String id;
+  final String url;
+  final int width;
+  final int height;
+
+  const Cat({
+    required this.id,
+    required this.url,
+    required this.width,
+    required this.height,
+  });
+
+  factory Cat.fromJson(Map<String, dynamic> json) {
+    return switch (json) {
+      {
+        'id': String id,
+        'url': String url,
+        'width': int width,
+        'height': int height,
+      } =>
+        Cat(
+          id: id,
+          url: url,
+          width: width,
+          height: height,
+        ),
+      _ => throw const FormatException('Failed to load cat.'),
     };
   }
 }
