@@ -76,6 +76,22 @@ Future<List<Cat>> fetchTenRandomCat() async {
   }
 }
 
+Future<List<Course>> fetchCourses() async {
+  final response = await http.get(
+    Uri.parse('http://10.0.2.2:1337/api/courses'),
+  );
+
+  if (response.statusCode == 200) {
+    final courses = jsonDecode(response.body)['data'];
+    return (courses as List<dynamic>)
+        .map(
+            (dynamic course) => Course.fromJson(course as Map<String, dynamic>))
+        .toList();
+  } else {
+    throw Exception('Failed to load courses.');
+  }
+}
+
 class ChukNorris {
   final String id;
   final String value;
@@ -164,6 +180,70 @@ class Cat {
   }
 }
 
+class Course {
+  int? id;
+  Attributes? attributes;
+
+  Course({this.id, this.attributes});
+
+  Course.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    attributes = json['attributes'] != null
+        ? new Attributes.fromJson(json['attributes'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    if (this.attributes != null) {
+      data['attributes'] = this.attributes!.toJson();
+    }
+    return data;
+  }
+}
+
+class Attributes {
+  String? name;
+  String? description;
+  String? releaseDate;
+  bool? onSale;
+  String? createdAt;
+  String? updatedAt;
+  String? publishedAt;
+
+  Attributes(
+      {this.name,
+      this.description,
+      this.releaseDate,
+      this.onSale,
+      this.createdAt,
+      this.updatedAt,
+      this.publishedAt});
+
+  Attributes.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    description = json['description'];
+    releaseDate = json['release_date'];
+    onSale = json['onSale'];
+    createdAt = json['createdAt'];
+    updatedAt = json['updatedAt'];
+    publishedAt = json['publishedAt'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['name'] = this.name;
+    data['description'] = this.description;
+    data['release_date'] = this.releaseDate;
+    data['onSale'] = this.onSale;
+    data['createdAt'] = this.createdAt;
+    data['updatedAt'] = this.updatedAt;
+    data['publishedAt'] = this.publishedAt;
+    return data;
+  }
+}
+
 void main() => runApp(const MyApp());
 
 class MyApp extends StatefulWidget {
@@ -179,6 +259,7 @@ class _MyAppState extends State<MyApp> {
   // late Future<List<Album>> futureAlbumList;
   // late Future<List<Cat>> futureRandomCat;
   late Future<List<Cat>> futureTenRandomCat;
+  late Future<List<Course>> futureCourses;
 
   @override
   void initState() {
@@ -188,6 +269,7 @@ class _MyAppState extends State<MyApp> {
     // futureAlbumList = fetchAlbumList();
     // futureRandomCat = futureRandomCat();
     futureTenRandomCat = fetchTenRandomCat();
+    futureCourses = fetchCourses();
   }
 
   @override
@@ -202,8 +284,8 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Fetch Data Example'),
         ),
         body: Center(
-          child: FutureBuilder<List<Cat>>(
-            future: fetchTenRandomCat(),
+          child: FutureBuilder<List<Course>>(
+            future: fetchCourses(),
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 return ListView.builder(
@@ -212,8 +294,7 @@ class _MyAppState extends State<MyApp> {
                     return Card(
                       child: Column(
                         children: [
-                          Image.network(snapshot.data![index].url),
-                          Text(snapshot.data![index].id),
+                          Text(snapshot.data![index].attributes!.name!),
                         ],
                       ),
                     );
