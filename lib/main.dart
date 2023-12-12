@@ -4,101 +4,56 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-Future<Album> fetchAlbum() async {
-  final response = await http
-      .get(Uri.parse('https://jsonplaceholder.typicode.com/albums/1'));
-
-  if (response.statusCode == 200) {
-    // If the server did return a 200 OK response,
-    // then parse the JSON.
-    return Album.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-  } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
-    throw Exception('Failed to load album');
-  }
-}
-
-Future<List<Album>> fetchAlbumList() async {
-  final response =
-      await http.get(Uri.parse('https://jsonplaceholder.typicode.com/albums'));
-
-  if (response.statusCode == 200) {
-    final albums = jsonDecode(response.body);
-    return (albums as List<dynamic>)
-        .map((dynamic album) => Album.fromJson(album as Map<String, dynamic>))
-        .toList();
-  } else {
-    throw Exception('Failed to Load List Album');
-  }
-}
-
-Future<ChukNorris> fetchChuckNorris() async {
+Future<List<Cat>> fetchRandomCat() async {
   final response = await http.get(
-    Uri.parse('https://api.chucknorris.io/jokes/random'),
+    Uri.parse('https://api.thecatapi.com/v1/images/search'),
   );
 
   if (response.statusCode == 200) {
-    return ChukNorris.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+    return List<Cat>.from(
+      json.decode(response.body).map((cat) => Cat.fromJson(cat)),
+    );
   } else {
-    throw Exception('Failed to load chuck norris.');
+    throw Exception('Failed to load cat');
   }
 }
 
-class ChukNorris {
+Future<List<Cat>> fetchListOfCat() async {
+  final response = await http.get(
+    Uri.parse('https://api.thecatapi.com/v1/images/search?limit=10'),
+  );
+
+  if (response.statusCode == 200) {
+    return List<Cat>.from(
+      json.decode(response.body).map(
+            (cat) => Cat.fromJson(cat),
+          ),
+    );
+  } else {
+    throw Exception('Failed to load cat');
+  }
+}
+
+class Cat {
   final String id;
-  final String value;
-  final String iconUrl;
+  final String url;
+  final int width;
+  final int height;
 
-  ChukNorris({
+  Cat({
     required this.id,
-    required this.value,
-    required this.iconUrl,
+    required this.url,
+    required this.width,
+    required this.height,
   });
 
-  factory ChukNorris.fromJson(Map<String, dynamic> json) {
-    return switch (json) {
-      {
-        'id': String id,
-        'value': String value,
-        'icon_url': String iconUrl,
-      } =>
-        ChukNorris(
-          id: id,
-          value: value,
-          iconUrl: iconUrl,
-        ),
-      _ => throw const FormatException('Failed to load chu.'),
-    };
-  }
-}
-
-class Album {
-  final int userId;
-  final int id;
-  final String title;
-
-  const Album({
-    required this.userId,
-    required this.id,
-    required this.title,
-  });
-
-  factory Album.fromJson(Map<String, dynamic> json) {
-    return switch (json) {
-      {
-        'userId': int userId,
-        'id': int id,
-        'title': String title,
-      } =>
-        Album(
-          userId: userId,
-          id: id,
-          title: title,
-        ),
-      _ => throw const FormatException('Failed to load album.'),
-    };
+  factory Cat.fromJson(Map<String, dynamic> json) {
+    return Cat(
+      id: json['id'],
+      url: json['url'],
+      width: json['width'],
+      height: json['height'],
+    );
   }
 }
 
@@ -112,16 +67,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // late Future<Album> futureAlbum;
-  // late Future<ChukNorris> futureChuckNorris;
-  late Future<List<Album>> futureAlbumList;
+  late Future<List<Cat>> futureListOfCat;
 
   @override
   void initState() {
     super.initState();
-    // futureAlbum = fetchAlbum();
-    // futureChuckNorris = fetchChuckNorris();
-    futureAlbumList = fetchAlbumList();
+    futureListOfCat = fetchRandomCat();
   }
 
   @override
@@ -136,23 +87,35 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Fetch Data Example'),
         ),
         body: Center(
-          child: FutureBuilder<List<Album>>(
-            future: futureAlbumList,
+          child: FutureBuilder<List<Cat>>(
+            future: fetchListOfCat(),
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 return ListView.builder(
-                    itemCount: snapshot.data!.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        leading: Text(snapshot.data![index].id.toString()),
-                        title: Text(snapshot.data![index].title),
-                      );
-                    });
+                  itemCount: snapshot.data!.length,
+                  itemBuilder: (context, index) {
+                    final cat = snapshot.data![index];
+                    return Card(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Image.network(cat.url),
+                          ListTile(
+                            leading: const Icon(Icons.pets),
+                            title: Text(cat.id),
+                            subtitle: Text(
+                              'Width: ${cat.width} Height: ${cat.height}',
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
               } else if (snapshot.hasError) {
                 return Text('${snapshot.error}');
               }
 
-              // By default, show a loading spinner.
               return const CircularProgressIndicator();
             },
           ),
