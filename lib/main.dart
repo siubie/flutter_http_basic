@@ -4,101 +4,148 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-Future<Album> fetchAlbum() async {
-  final response = await http
-      .get(Uri.parse('https://jsonplaceholder.typicode.com/albums/1'));
+Future<ListCourseResponse> fetchCourseList() {
+  return http
+      .get(Uri.parse('http://10.0.2.2:1337/api/courses'))
+      .then((response) => response.body)
+      .then((body) => ListCourseResponse.fromJson(json.decode(body)))
+      .catchError((error) => throw Exception('Failed to load album'));
+}
 
-  if (response.statusCode == 200) {
-    // If the server did return a 200 OK response,
-    // then parse the JSON.
-    return Album.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-  } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
-    throw Exception('Failed to load album');
+class ListCourseResponse {
+  List<Data>? data;
+  Meta? meta;
+
+  ListCourseResponse({this.data, this.meta});
+
+  ListCourseResponse.fromJson(Map<String, dynamic> json) {
+    if (json['data'] != null) {
+      data = <Data>[];
+      json['data'].forEach((v) {
+        data!.add(new Data.fromJson(v));
+      });
+    }
+    meta = json['meta'] != null ? new Meta.fromJson(json['meta']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    if (this.data != null) {
+      data['data'] = this.data!.map((v) => v.toJson()).toList();
+    }
+    if (this.meta != null) {
+      data['meta'] = this.meta!.toJson();
+    }
+    return data;
   }
 }
 
-Future<List<Album>> fetchAlbumList() async {
-  final response =
-      await http.get(Uri.parse('https://jsonplaceholder.typicode.com/albums'));
+class Data {
+  int? id;
+  Attributes? attributes;
 
-  if (response.statusCode == 200) {
-    final albums = jsonDecode(response.body);
-    return (albums as List<dynamic>)
-        .map((dynamic album) => Album.fromJson(album as Map<String, dynamic>))
-        .toList();
-  } else {
-    throw Exception('Failed to Load List Album');
+  Data({this.id, this.attributes});
+
+  Data.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    attributes = json['attributes'] != null
+        ? new Attributes.fromJson(json['attributes'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
+    if (this.attributes != null) {
+      data['attributes'] = this.attributes!.toJson();
+    }
+    return data;
   }
 }
 
-Future<ChukNorris> fetchChuckNorris() async {
-  final response = await http.get(
-    Uri.parse('https://api.chucknorris.io/jokes/random'),
-  );
+class Attributes {
+  String? name;
+  String? description;
+  String? releaseDate;
+  bool? onSale;
+  String? createdAt;
+  String? updatedAt;
+  String? publishedAt;
 
-  if (response.statusCode == 200) {
-    return ChukNorris.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
-  } else {
-    throw Exception('Failed to load chuck norris.');
+  Attributes(
+      {this.name,
+      this.description,
+      this.releaseDate,
+      this.onSale,
+      this.createdAt,
+      this.updatedAt,
+      this.publishedAt});
+
+  Attributes.fromJson(Map<String, dynamic> json) {
+    name = json['name'];
+    description = json['description'];
+    releaseDate = json['release_date'];
+    onSale = json['onSale'];
+    createdAt = json['createdAt'];
+    updatedAt = json['updatedAt'];
+    publishedAt = json['publishedAt'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['name'] = this.name;
+    data['description'] = this.description;
+    data['release_date'] = this.releaseDate;
+    data['onSale'] = this.onSale;
+    data['createdAt'] = this.createdAt;
+    data['updatedAt'] = this.updatedAt;
+    data['publishedAt'] = this.publishedAt;
+    return data;
   }
 }
 
-class ChukNorris {
-  final String id;
-  final String value;
-  final String iconUrl;
+class Meta {
+  Pagination? pagination;
 
-  ChukNorris({
-    required this.id,
-    required this.value,
-    required this.iconUrl,
-  });
+  Meta({this.pagination});
 
-  factory ChukNorris.fromJson(Map<String, dynamic> json) {
-    return switch (json) {
-      {
-        'id': String id,
-        'value': String value,
-        'icon_url': String iconUrl,
-      } =>
-        ChukNorris(
-          id: id,
-          value: value,
-          iconUrl: iconUrl,
-        ),
-      _ => throw const FormatException('Failed to load chu.'),
-    };
+  Meta.fromJson(Map<String, dynamic> json) {
+    pagination = json['pagination'] != null
+        ? new Pagination.fromJson(json['pagination'])
+        : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    if (this.pagination != null) {
+      data['pagination'] = this.pagination!.toJson();
+    }
+    return data;
   }
 }
 
-class Album {
-  final int userId;
-  final int id;
-  final String title;
+class Pagination {
+  int? page;
+  int? pageSize;
+  int? pageCount;
+  int? total;
 
-  const Album({
-    required this.userId,
-    required this.id,
-    required this.title,
-  });
+  Pagination({this.page, this.pageSize, this.pageCount, this.total});
 
-  factory Album.fromJson(Map<String, dynamic> json) {
-    return switch (json) {
-      {
-        'userId': int userId,
-        'id': int id,
-        'title': String title,
-      } =>
-        Album(
-          userId: userId,
-          id: id,
-          title: title,
-        ),
-      _ => throw const FormatException('Failed to load album.'),
-    };
+  Pagination.fromJson(Map<String, dynamic> json) {
+    page = json['page'];
+    pageSize = json['pageSize'];
+    pageCount = json['pageCount'];
+    total = json['total'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['page'] = this.page;
+    data['pageSize'] = this.pageSize;
+    data['pageCount'] = this.pageCount;
+    data['total'] = this.total;
+    return data;
   }
 }
 
@@ -114,14 +161,14 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   // late Future<Album> futureAlbum;
   // late Future<ChukNorris> futureChuckNorris;
-  late Future<List<Album>> futureAlbumList;
+  late Future<ListCourseResponse> futureCourseList;
 
   @override
   void initState() {
     super.initState();
     // futureAlbum = fetchAlbum();
     // futureChuckNorris = fetchChuckNorris();
-    futureAlbumList = fetchAlbumList();
+    futureCourseList = fetchCourseList();
   }
 
   @override
@@ -136,18 +183,20 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Fetch Data Example'),
         ),
         body: Center(
-          child: FutureBuilder<List<Album>>(
-            future: futureAlbumList,
+          child: FutureBuilder<ListCourseResponse>(
+            future: futureCourseList,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
+                final result = snapshot.data!.data;
                 return ListView.builder(
-                    itemCount: snapshot.data!.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        leading: Text(snapshot.data![index].id.toString()),
-                        title: Text(snapshot.data![index].title),
-                      );
-                    });
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(result[index].attributes!.name!),
+                      subtitle: Text(result[index].attributes!.description!),
+                    );
+                  },
+                  itemCount: result!.length,
+                );
               } else if (snapshot.hasError) {
                 return Text('${snapshot.error}');
               }
